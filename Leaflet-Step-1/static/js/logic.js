@@ -25,46 +25,83 @@ var link = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/4.5_month.
 //   weight: 1.5
 // };
 
-// Define a markerSize function that will give each earthquake a different radius based on its magnitude
-function markerSize(magnitude) {
-    return magnitude * 10;
-}
+// // Define a markerSize function that will give each earthquake a different radius based on its magnitude
+// function markerSize(magnitude) {
+//     return magnitude * 10;
+// }
 
 // Grabbing our GeoJSON data..
 d3.json(link, function (response) {
-    // Creating a geoJSON layer with the retrieved data
+    // Check if data is retrieved
     console.log(response);
+    // Pull out array containing relevant data
+    var location = response.features
+    console.log(location);
 
-    // Loop through the earthquake array and create one marker for each quake
-    for (var i = 0; i < data.length; i++) {
+    // // Loop through the earthquake array and create one marker for each quake
+    // for (var i = 0; i < location.length; i++) {
 
-        // Conditionals for earthquake magnitude
-        var color = "";
-        if (data[i].features.properties.mag > 9) {
-            color = "#FF5E33";
-        }
-        else if (data[i].features.properties.mag > 8) {
-            color = "#FFA233";
-        }
-        else if (data[i].features.properties.mag > 7) {
-            color = "#F0FF33";
-        }
-        else if (data[i].features.properties.mag > 6) {
-            color = "#F0FF33";
-        }
-        else if (data[i].features.properties.mag > 5) {
-            color = "#BBFF33";
-        }
-        else {
-            color = "#5BFF33";
+    //     // Conditionals for earthquake magnitude
+    //     var color = "";
+    //     if (location.properties.mag > 9) {
+    //         color = "#FF5E33";
+    //     }
+    //     else if (location.properties.mag > 8) {
+    //         color = "#FFA233";
+    //     }
+    //     else if (location.properties.mag > 7) {
+    //         color = "#F0FF33";
+    //     }
+    //     else if (location.properties.mag > 6) {
+    //         color = "#F0FF33";
+    //     }
+    //     else if (location.properties.mag > 5) {
+    //         color = "#BBFF33";
+    //     }
+    //     else {
+    //         color = "#5BFF33";
+    //     }
+
+
+    function createMarkers(response) {
+
+        // Pull the "stations" property off of response.data
+        var stations = response.data.stations;
+
+        // Initialize an array to hold bike markers
+        var bikeMarkers = [];
+
+        // Loop through the stations array
+        for (var index = 0; index < stations.length; index++) {
+            var station = stations[index];
+
+            // For each station, create a marker and bind a popup with the station's name
+            var bikeMarker = L.marker([station.lat, station.lon])
+                .bindPopup("<h3>" + station.name + "<h3><h3>Capacity: " + station.capacity + "</h3>");
+
+            // Add the marker to the bikeMarkers array
+            bikeMarkers.push(bikeMarker);
         }
 
-        // Add circles to map
-        L.circle(data[i].features.geometry.coordinates[i], {
-            fillOpacity: 0.75,
-            color: "white",
-            fillColor: color,
-            // Adjust radius
-            radius: countries[i].points * 1500
-        }).bindPopup("<h1>" + countries[i].name + "</h1> <hr> <h3>Points: " + countries[i].points + "</h3>").addTo(myMap);
+        // Create a layer group made from the bike markers array, pass it into the createMap function
+        createMap(L.layerGroup(bikeMarkers));
     }
+
+
+    // Perform an API call to the Citi Bike API to get station information. Call createMarkers when complete
+    d3.json("https://gbfs.citibikenyc.com/gbfs/en/station_information.json", createMarkers);
+
+
+
+
+
+    // Add circles to map
+    for (var i = 0; i < location.length; i++) {
+        var geometry = location.geometry;
+        console.log(geometry);
+        for (var i = 0; i < geometry.length; i++) {
+            var coordinates = geometry.coordinates;
+            L.circle([coordinates[1], coordinates[0]]).addTo(myMap);
+        };
+    };
+});
